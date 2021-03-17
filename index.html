@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+  <title>Grafico</title>
+</head>
+
+<body>
+  <canvas id="myChart" width="400" height="100" onscroll="scrollevent()"></canvas>
+  <button id="next">Next set</button>
+  <button id="back">Back set</button>
+  <button id="zoom-in">Zoom In</button>
+  <button id="zoom-out">Zoom out</button>
+  <script>
+    var ctx = document.getElementById('myChart').getContext('2d');
+   
+    let set = 1;
+    let avarage = 600;
+    var myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: []
+      },
+      options: {
+        animation: {
+          duration: 0
+        },
+        elements: {
+
+        },
+        scales: {
+          yAxes: [{
+            stacked: false,
+            ticks: {
+              beginAtZero: true,
+              stacked: false
+            }
+          }]
+        }
+      }
+    });
+    // setInterval(() => {
+
+    //   data1.push(parseInt(Math.random() * Math.floor(6000)));
+    //   data2.push(parseInt(Math.random() * Math.floor(6000)));
+    //   data3.push(parseInt(Math.random() * Math.floor(6000)));
+    //   data1.shift();
+    //   data2.shift();
+    //   data3.shift();
+    //   myChart.data.datasets[0].data = data1;
+
+    //   myChart.data.datasets[1].data = data2;
+
+    //   myChart.data.datasets[2].data = data3;
+    //   myChart.update();
+    // }, 1000);
+
+    const labels = [];
+    const frames_data = [];
+    const fifo_data = [];
+    const fps_data = [];
+    const max_fifo = [];
+    const max_dataset = {
+      label: 'max_fifo',
+      data: max_fifo,
+      lineTension: 0.6,
+      fill: false,
+      borderColor: [
+        'green',
+
+      ],
+      borderWidth: 1
+    };
+    const fifo_dataset = {
+      label: 'fifo',
+      data: fifo_data,
+      lineTension: 0.6,
+      fill: false,
+      borderColor: [
+        'rgba(54, 162, 235, 1)',
+
+      ],
+      borderWidth: 1
+    };
+    const fps_dataset = {
+      label: 'fps',
+      data: fps_data,
+      lineTension: 0.6,
+      fill: false,
+      borderColor: ['red'],
+      borderWidth: 1
+    }
+
+    myChart.data.datasets[0] = fifo_dataset;
+    myChart.data.datasets[1] = fps_dataset;
+    myChart.data.datasets[2] = max_dataset;
+
+    const drawSet = () => {
+      myChart.data.labels = labels.slice(avarage * (set - 1), (avarage * set));
+      myChart.data.datasets[0].data = fifo_data.slice(avarage * (set - 1), (avarage * set));
+      myChart.data.datasets[1].data = fps_data.slice(avarage * (set - 1), (avarage * set));
+      myChart.data.datasets[2].data = max_fifo.slice(avarage * (set - 1), (avarage * set));
+      myChart.update();
+      console.log('drawing')
+    }
+    fetch('./php/getLog.php').then(data => data.json()).then(data => {
+      Object.keys(data).map(time => {
+        if (time !== "") {
+          labels.push(time);
+          console.log(data[time].Max_fifo);
+          frames_data.push(data[time].Frame);
+          fps_data.push(data[time].fps);
+          fifo_data.push(data[time].current_fifo);
+          max_fifo.push(data[time].Max_fifo);
+        }
+
+      });
+    }).then(res => {
+
+      drawSet();
+      document.getElementById("next").onclick = () => {
+        set = set + 1;
+        drawSet();
+      }
+      document.getElementById("back").onclick = () => {
+        set = set - 1;
+        drawSet();
+      }
+      document.getElementById("zoom-in").onclick = () => {
+        avarage = avarage - 20;
+        drawSet();
+      }
+      document.getElementById("zoom-out").onclick = () => {
+        avarage = avarage + 20;
+        drawSet();
+      }
+    })
+    const scrollevent = () => {
+        console.log('scrolling');
+        avarage = avarage - 20;
+        drawSet();
+      };
+    
+  </script>
+
+</body>
+
+</html>
